@@ -214,6 +214,4 @@ for epoch_i in range(n_epochs):
                                                          y: Y_valid,
                                                          keep_prob: 1.0
                                                      })))
-    # theta = sess.run(h_fc_loc2, feed_dict={
-    #        x: batch_xs, keep_prob: 1.0})
-    # print(theta[0])
+  
