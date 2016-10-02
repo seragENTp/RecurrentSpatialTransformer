@@ -45,7 +45,7 @@ Y_valid = dense_to_one_hot(y_valid, n_classes=10)
 Y_test = dense_to_one_hot(y_test, n_classes=10)
 
 
-# %% Placeholders for 40x40 resolution
+# %% Placeholders for 100x100 resolution
 x = tf.placeholder(tf.float32, [None, 10000])
 y = tf.placeholder(tf.float32, [None, 10])
 
