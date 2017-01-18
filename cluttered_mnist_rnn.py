@@ -45,7 +45,7 @@ Y_valid = dense_to_one_hot(y_valid, n_classes=10)
 Y_test = dense_to_one_hot(y_test, n_classes=10)
 
 
-# %% Placeholders for 100x100 resolution
+# %% Placeholders for 40x40 resolution
 x = tf.placeholder(tf.float32, [None, 10000])
 y = tf.placeholder(tf.float32, [None, 10])
 
@@ -66,21 +66,19 @@ l_pool0_loc = tf.nn.max_pool(x_tensor,ksize=[1,2,2,1],strides=[1,2,2,1],padding=
 
 W_conv0_loc = weight_variable([3,3,1,20])
 
-l_conv0_loc = tf.nn.conv2d(l_pool0_loc,W_conv0_loc,strides=[1,1,1,1],padding='VALID')
+l_conv0_loc = tf.nn.relu(tf.nn.conv2d(l_pool0_loc,W_conv0_loc,strides=[1,1,1,1],padding='VALID'))
 
 l_pool1_loc = tf.nn.max_pool(l_conv0_loc,ksize=[1,2,2,1],strides =[1,2,2,1],padding='VALID')
 
 W_conv1_loc = weight_variable([3,3,20,20])                   
 
-l_conv1_loc =  tf.nn.conv2d(l_pool1_loc,W_conv1_loc,strides=[1,1,1,1],padding='VALID')
-
-l_conv1_loc = tf.nn.dropout(l_conv1_loc,keep_prob)
+l_conv1_loc =  tf.nn.relu(tf.nn.conv2d(l_pool1_loc,W_conv1_loc,strides=[1,1,1,1],padding='VALID'))
 
 l_pool2_loc = tf.nn.max_pool(l_conv1_loc,ksize=[1,2,2,1],strides =[1,2,2,1],padding='VALID')
 
 W_conv2_loc = weight_variable([3,3,20,20])
 
-l_conv2_loc = tf.nn.conv2d(l_pool2_loc,W_conv2_loc,strides=[1,1,1,1],padding='VALID') 
+l_conv2_loc = tf.nn.relu(tf.nn.conv2d(l_pool2_loc,W_conv2_loc,strides=[1,1,1,1],padding='VALID') )
 
 l_conv2_loc = tf.reshape(l_conv2_loc,[-1 ,9*9*20 ])
 
@@ -126,29 +124,23 @@ l_transform = transformer(tf.tile(x_tensor,[3,1,1,1]), l_fc1_loc, out_size)
 
 W_conv0_out = weight_variable([3,3,1,32])                   
 
-l_conv0_out = tf.nn.conv2d(l_transform,W_conv0_out,strides=[1,1,1,1],padding='VALID')
-
+l_conv0_out = tf.nn.relu(tf.nn.conv2d(l_transform,W_conv0_out,strides=[1,1,1,1],padding='VALID'))
 
 l_pool1_out = tf.nn.max_pool(l_conv0_out,ksize=[1,2,2,1], strides=[1,2,2,1],padding='VALID')
-
                    
 l_drp1_out = tf.nn.dropout(l_pool1_out,keep_prob)
 
-
 W_conv1_out = weight_variable([3,3,32,32])                   
 
-l_conv1_out = tf.nn.conv2d(l_drp1_out,W_conv1_out,strides=[1,1,1,1],padding='VALID')
-
+l_conv1_out = tf.nn.relu(tf.nn.conv2d(l_drp1_out,W_conv1_out,strides=[1,1,1,1],padding='VALID'))
 
 l_pool2_out = tf.nn.max_pool(l_conv1_out,ksize=[1,2,2,1], strides=[1,2,2,1],padding='VALID')
 
-
 l_drp2_out = tf.nn.dropout(l_pool2_out,keep_prob)
-
 
 W_conv2_out = weight_variable([3,3,32,32])                   
 
-l_conv2_out = tf.nn.conv2d(l_drp2_out,W_conv2_out,strides=[1,1,1,1],padding='VALID')
+l_conv2_out = tf.nn.relu(tf.nn.conv2d(l_drp2_out,W_conv2_out,strides=[1,1,1,1],padding='VALID'))
 
 
 
@@ -168,10 +160,13 @@ y_logits = tf.matmul(h_fc1, W_fc2) + b_fc2
 
 # %% Define loss/eval/training functions
 cross_entropy = tf.reduce_mean(
-    tf.nn.softmax_cross_entropy_with_logits(y_logits, y))
-opt = tf.train.AdamOptimizer()
+    tf.nn.softmax_cross_entropy_with_logits(y_logits,y))
+
+opt = tf.train.RMSPropOptimizer(0.0005)
+#opt = tf.train.AdamOptimizer()
 optimizer = opt.minimize(cross_entropy)
 # %% Monitor accuracy
+
 correct_prediction = tf.equal(tf.argmax(y_logits, 1), tf.argmax(y, 1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, 'float'))
 
@@ -206,12 +201,13 @@ for epoch_i in range(n_epochs):
             print('Iteration: ' + str(iter_i) + ' Loss: ' + str(loss))
 
         sess.run(optimizer, feed_dict={
-            x: batch_xs, y: batch_ys, keep_prob: 0.5})
+        x: batch_xs, y: batch_ys, keep_prob: 1.0})
 
-    print('Accuracy (%d): ' % epoch_i + str(sess.run(accuracy,
+print('Accuracy (%d): ' % epoch_i + str(sess.run(accuracy,
                                                      feed_dict={
                                                          x: X_valid,
                                                          y: Y_valid,
                                                          keep_prob: 1.0
-                                                     })))
+                                                    })))
   
+
